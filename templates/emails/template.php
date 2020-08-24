@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 do_action( 'woocommerce_email_header', $email_heading, $email );
 
-$telegram_chatbot_code = get_post_meta( $order->ID, 'telegram_chatbot_code' );
+$telegram_chatbot_code = get_post_meta( $order->get_id(), 'telegram_chatbot_code', true );
 
 ?>
 

@@ -8,6 +8,8 @@ class WC_POC_Telegram_Email extends WC_Email
 	{
 		$this->id = 'wc_poc_telegram';
 
+		$this->customer_email = true;
+
 		$this->title = 'POC Telegram Bot Key';
 
 		$this->description = 'POC Telegram Bot Key';
@@ -17,7 +19,9 @@ class WC_POC_Telegram_Email extends WC_Email
 		$this->subject = 'POC Telegram Bot Key';
 
 		$this->template_html  = 'emails/template.php';
+
 		$this->template_plain = 'emails/plain/plain.php';
+
 		$this->template_base = plugin_dir_path( __FILE__ ) . 'templates/';
 
 		add_action( 'woocommerce_order_status_completed', array( $this, 'trigger' ) );
@@ -39,15 +43,19 @@ class WC_POC_Telegram_Email extends WC_Email
 
 		$this->object = new WC_Order( $order_id );
 
-		$key = $this->get_key();
+		$key = $this->get_key( $order_id );
 
 		if ( empty( $key ) ) {
-			return $this->send_email_to_email_when_failed();
+			return $this->send_email_to_email_when_failed( $order_id );
 		}
+
+		$this->setup_locale();
 
 		if ( ! $this->is_enabled() || ! $this->get_recipient() ) {
 			return;
 		}
+
+		$this->recipient = $this->object->get_billing_email();
 
 		$this->send(
 			$this->get_recipient(),
@@ -56,6 +64,8 @@ class WC_POC_Telegram_Email extends WC_Email
 			$this->get_headers(),
 			$this->get_attachments()
 		);
+
+		$this->restore_locale();
 	}
 
 	public function get_content_html()
@@ -138,26 +148,64 @@ class WC_POC_Telegram_Email extends WC_Email
 		return;
 	}
 
-	protected function get_key()
+	protected function get_key( $order_id )
 	{
-		$response = wp_remote_post( 'http://foo.bar', array(
-			'body' => array(
+		$key = get_post_meta( $order_id, 'telegram_chatbot_code', true );
 
+		if ( ! empty( $key ) ) {
+			return $key;
+		}
+
+		$order = wc_get_order( $order_id );
+
+		if ( ! $order ) {
+			return;
+		}
+
+		$response = wp_remote_post( 'http://51.15.215.182:3000/api/user/request_code', array(
+			'body' => array(
+				'token' => 'AAGfk5BfIftgaNxViSb62OEumIrj9yh_1Pg',
 			)
 		) );
 
 		if ( is_wp_error( $response ) ) {
-			return '';
+			return;
 		}
 
-		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		$data = json_decode( $body );
-
-		if ( ! $data ) {
-			return '';
+		if ( ! $data || ! isset( $data['data'] ) || ! isset( $data['data']['code'] ) ) {
+			return;
 		}
 
-		return 'key';
+		$code = $data['data']['code'];
+
+		if ( empty( $code ) ) {
+			return;
+		}
+
+		$response = wp_remote_post( 'http://51.15.215.182:3000/api/user/create', array(
+			'body' => array(
+				'token' => 'AAGfk5BfIftgaNxViSb62OEumIrj9yh_1Pg',
+				'code' => $code,
+				'phoneNumber' => $order->get_billing_phone(),
+				'fullName' => $order->get_billing_last_name() . ' ' . $order->get_billing_first_name(),
+				'email' => $order->get_billing_email()
+			)
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			return;
+		}
+
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! $data || ! isset( $data['data'] ) || empty( $data['data'] ) ) {
+			return;
+		}
+
+		update_post_meta( $order_id, 'telegram_chatbot_code', $code );
+
+		return $code;
 	}
 }
