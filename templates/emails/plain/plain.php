@@ -6,7 +6,7 @@ $telegram_chatbot_code = get_post_meta( $order->ID, 'telegram_chatbot_code' );
 
 <p>Chúc mừng bạn đã đăng ký thành công Mayor Capital Membership.</p>
 
-<p>Bot Username: <a href="https://t.me/bonbonpocbot">@bonbonpocbot</a></p>
+<p>Bot Username: <a href="https://t.me/mayorcapitalbot">@mayorcapitalbot</a></p>
 
 <p>Mã code truy cập của bạn: <strong><?php echo $telegram_chatbot_code; ?></strong></p>
 
