@@ -168,6 +168,10 @@ class WC_POC_Telegram_Email extends WC_Email
 			)
 		) );
 
+		error_log( 'Order ID: ' . $order_id );
+
+		error_log( print_r( $response, true ) );
+
 		if ( is_wp_error( $response ) ) {
 			return;
 		}
@@ -193,6 +197,8 @@ class WC_POC_Telegram_Email extends WC_Email
 				'email' => $order->get_billing_email()
 			)
 		) );
+
+		error_log( print_r( $response, true ) );
 
 		if ( is_wp_error( $response ) ) {
 			return;
