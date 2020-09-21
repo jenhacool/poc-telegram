@@ -40,58 +40,58 @@ function poc_telegram_process_get_code( WC_Order $order ) {
 
 add_action( 'woocommerce_order_action_wc_poc_telegram_get_code', 'poc_telegram_process_get_code' );
 
-function poc_telegram_cron_schedules($schedules){
-    if( ! isset($schedules['5min'] ) ) {
-        $schedules['5min'] = array(
-            'interval' => 5 * 60,
-            'display' => __( 'Once every 5 minutes', 'poc-foundation' )
-        );
-    }
-
-    return $schedules;
-}
-
-add_filter( 'cron_schedules', 'poc_telegram_cron_schedules' );
-
-if ( ! wp_next_scheduled( 'poc_telegram_task_hook' ) ) {
-    wp_schedule_event( time(), '5min', 'poc_telegram_task_hook' );
-}
-
-add_action ( 'poc_telegram_task_hook', 'poc_foundation_task_function' );
-
-function poc_foundation_task_function() {
-    $orders = wc_get_orders( array(
-        'status' => 'completed',
-        'meta_query' => array(
-            'key' => 'telegram_chatbot_code_sent',
-            'value' => 1,
-            'compare' => '!='
-        ),
-    ) );
-
-    if ( empty( $orders ) ) {
-        return;
-    }
-
-    $mailer = WC()->mailer();
-
-    $mails = $mailer->get_emails();
-
-    $mail = null;
-
-    if ( empty( $mails ) ) {
-        return;
-    }
-
-    foreach ( $mails as $m ) {
-        if ( $m->id == 'wc_poc_telegram' ) {
-            $mail = $m;
-        }
-    }
-
-    foreach ( $orders as $order ) {
-        $mail->trigger( $order->get_id() );
-    }
-
-    return;
-}
+//function poc_telegram_cron_schedules($schedules){
+//    if( ! isset($schedules['5min'] ) ) {
+//        $schedules['5min'] = array(
+//            'interval' => 5 * 60,
+//            'display' => __( 'Once every 5 minutes', 'poc-foundation' )
+//        );
+//    }
+//
+//    return $schedules;
+//}
+//
+//add_filter( 'cron_schedules', 'poc_telegram_cron_schedules' );
+//
+//if ( ! wp_next_scheduled( 'poc_telegram_task_hook' ) ) {
+//    wp_schedule_event( time(), '5min', 'poc_telegram_task_hook' );
+//}
+//
+//add_action ( 'poc_telegram_task_hook', 'poc_foundation_task_function' );
+//
+//function poc_foundation_task_function() {
+//    $orders = wc_get_orders( array(
+//        'status' => 'completed',
+//        'meta_query' => array(
+//            'key' => 'telegram_chatbot_code_sent',
+//            'value' => 1,
+//            'compare' => '!='
+//        ),
+//    ) );
+//
+//    if ( empty( $orders ) ) {
+//        return;
+//    }
+//
+//    $mailer = WC()->mailer();
+//
+//    $mails = $mailer->get_emails();
+//
+//    $mail = null;
+//
+//    if ( empty( $mails ) ) {
+//        return;
+//    }
+//
+//    foreach ( $mails as $m ) {
+//        if ( $m->id == 'wc_poc_telegram' ) {
+//            $mail = $m;
+//        }
+//    }
+//
+//    foreach ( $orders as $order ) {
+//        $mail->trigger( $order->get_id() );
+//    }
+//
+//    return;
+//}
