@@ -46,6 +46,9 @@ class WC_POC_Telegram_Email extends WC_Email
 		$key = $this->get_key( $order_id );
 
 		if ( empty( $key ) ) {
+		    $this->object->add_order_note(
+		        __( 'Get Telegram chatbot code failed.', 'poc-telegram' )
+            );
 			return $this->send_email_to_email_when_failed( $order_id );
 		}
 
@@ -64,6 +67,12 @@ class WC_POC_Telegram_Email extends WC_Email
 			$this->get_headers(),
 			$this->get_attachments()
 		);
+
+        update_post_meta( $order_id, 'telegram_chatbot_code_sent', true );
+
+		$this->object->add_order_note(
+		    __( 'Telegram chatbot code sent to customer.', 'poc-foundation' )
+        );
 
 		$this->restore_locale();
 	}
@@ -159,56 +168,20 @@ class WC_POC_Telegram_Email extends WC_Email
 		$order = wc_get_order( $order_id );
 
 		if ( ! $order ) {
-			return;
+			return '';
 		}
 
-		$response = wp_remote_post( 'http://51.15.215.182:3000/api/user/request_code', array(
-			'body' => array(
-				'token' => 'AAGfk5BfIftgaNxViSb62OEumIrj9yh_1Pg',
-			)
-		) );
+		$api = new POC_Telegram_API();
 
-		error_log( 'Order ID: ' . $order_id );
+        $code = $api->get_chatbot_code( array(
+            'phoneNumber' => $order->get_billing_phone(),
+            'fullName' => $order->get_billing_last_name() . ' ' . $order->get_billing_first_name(),
+            'email' => $order->get_billing_email()
+        ) );
 
-		error_log( print_r( $response, true ) );
-
-		if ( is_wp_error( $response ) ) {
-			return;
-		}
-
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( ! $data || ! isset( $data['data'] ) || ! isset( $data['data']['code'] ) ) {
-			return;
-		}
-
-		$code = $data['data']['code'];
-
-		if ( empty( $code ) ) {
-			return;
-		}
-
-		$response = wp_remote_post( 'http://51.15.215.182:3000/api/user/create', array(
-			'body' => array(
-				'token' => 'AAGfk5BfIftgaNxViSb62OEumIrj9yh_1Pg',
-				'code' => $code,
-				'phoneNumber' => $order->get_billing_phone(),
-				'fullName' => $order->get_billing_last_name() . ' ' . $order->get_billing_first_name(),
-				'email' => $order->get_billing_email()
-			)
-		) );
-
-		error_log( print_r( $response, true ) );
-
-		if ( is_wp_error( $response ) ) {
-			return;
-		}
-
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( ! $data || ! isset( $data['data'] ) || empty( $data['data'] ) ) {
-			return;
-		}
+        if ( empty( $code ) ) {
+            return '';
+        }
 
 		update_post_meta( $order_id, 'telegram_chatbot_code', $code );
 
