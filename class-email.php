@@ -41,7 +41,13 @@ class WC_POC_Telegram_Email extends WC_Email
 			return;
 		}
 
-		$this->object = new WC_Order( $order_id );
+		$order = new WC_Order( $order_id );
+
+		if ( ! $order || get_post_meta( $order->get_id(), 'telegram_chatbot_code_sent', true ) == 1  ) {
+		    return;
+        }
+
+		$this->object = $order;
 
 		$key = $this->get_key( $order_id );
 
